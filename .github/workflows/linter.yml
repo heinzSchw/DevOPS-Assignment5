@@ -51,7 +51,7 @@ jobs:
 
           for dir in $(dirname $files); do
             echo "Validating Kustomize directory: $dir"
-            kustomize build "$dir" --validate=false >/dev/null || {
+            kustomize build "$dir" >/dev/null || {
               echo "ERROR: kustomize build failed for $dir"
               exit 1
             }
