@@ -40,7 +40,13 @@ jobs:
 
     - name: Validate kustomize output
       run: |
-        for dir in $(find . -name kustomization.yaml -exec dirname {} \;); do
+        files=$(find . -name kustomization.yaml)
+        if [ -z "$files" ]; then
+          echo "No kustomization.yaml files found — skipping validation."
+          exit 0
+        fi
+
+        for dir in $(dirname $files); do
           echo "Validating Kustomize directory: $dir"
           kustomize build "$dir" | kubectl apply --dry-run=client --validate=false -f -
         done
