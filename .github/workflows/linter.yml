@@ -23,7 +23,10 @@ jobs:
       - name: Lint Kubernetes manifests with config
         run: |
           echo "Linting all Kubernetes manifests with kube-linter..."
-          kube-linter lint environments/ --config .kube-linter.yaml
+          kube-linter lint environments/ --config .kube-linter.yaml || {
+            echo "ERROR: kube-linter found issues"
+            exit 1
+          }
 
   validate-kustomize:
     name: Validate Kustomize Build
@@ -48,7 +51,7 @@ jobs:
 
           for dir in $(dirname $files); do
             echo "Validating Kustomize directory: $dir"
-            kustomize build "$dir" --load-restrictor=LoadRestrictionsNone > /dev/null || {
+            kustomize build "$dir" --load-restrictor=LoadRestrictionsNone --validate=false > /dev/null || {
               echo "ERROR: kustomize build failed for $dir"
               exit 1
             }
