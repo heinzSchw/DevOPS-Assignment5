@@ -17,3 +17,4 @@ checks:
     - required-annotation-email
     - required-label-owner
     - minimum-three-replicas
+    - no-node-affinity
