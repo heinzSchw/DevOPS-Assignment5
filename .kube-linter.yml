@@ -16,3 +16,4 @@ checks:
     - read-secret-from-env-var
     - required-annotation-email
     - required-label-owner
+    - minimum-three-replicas
