@@ -23,14 +23,7 @@ jobs:
     - name: Lint Kubernetes manifests with config
       run: |
         echo "Linting all Kubernetes manifests with kube-linter..."
-        find environments/ -name "*.yaml" | while read file; do
-          if grep -q "kind: SealedSecret" "$file"; then
-            echo "Skipping SealedSecret: $file"
-            continue
-          fi
-          echo "Linting $file"
-          kube-linter lint --config .kube-linter.yaml "$file"
-        done
+        kube-linter lint environments/ --config .kube-linter.yaml
 
   validate-kustomize:
     name: Validate Kustomize Build
