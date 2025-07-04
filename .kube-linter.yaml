@@ -18,3 +18,4 @@ checks:
     - required-label-owner
     - minimum-three-replicas
     - no-node-affinity
+    - no-anti-affinity
