@@ -41,51 +41,54 @@ jobs:
           curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
           sudo mv kustomize /usr/local/bin/
 
-      - name: Validate kustomize output
+      - name: Validate kustomize output (no cluster)
         run: |
-          files=$(find . -name kustomization.yaml)
+          echo "🔍 Searching for kustomization.yaml files..."
+          files=$(find . -type f -name 'kustomization.yaml')
           if [ -z "$files" ]; then
-            echo "No kustomization.yaml files found — skipping validation."
+            echo "✅ No kustomization.yaml files found — skipping build validation."
             exit 0
           fi
 
-          for dir in $(dirname $files); do
-            echo "Validating Kustomize directory: $dir"
-            kustomize build "$dir" >/dev/null || {
-              echo "ERROR: kustomize build failed for $dir"
+          echo "$files" | while read file; do
+            dir=$(dirname "$file")
+            echo "🧪 Validating with kustomize build: $dir"
+            if ! kustomize build "$dir" > /dev/null; then
+              echo "❌ ERROR: kustomize build failed in $dir"
               exit 1
-            }
+            fi
+            echo "✅ Success: $dir passed kustomize build"
           done
 
   validate-manifests:
-    name: Validate Kubernetes Manifests
-    runs-on: ubuntu-latest
+  name: Validate Kubernetes Manifests (YAML-only)
+  runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-      - name: Setup kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'v1.28.0'
+    - name: Install yamllint
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y yamllint
 
-      - name: Validate Kubernetes YAML syntax
-        run: |
-          echo "Validating YAML syntax..."
-          find environments/ -name "*.yaml" -exec kubectl --dry-run=client apply -f {} \;
+    - name: Validate YAML syntax
+      run: |
+        echo "🔍 Validating YAML syntax with yamllint..."
+        yamllint -d "{extends: relaxed, rules: {line-length: disable}}" environments/
 
-      - name: Check for required fields
-        run: |
-          echo "Checking for required Kubernetes fields..."
-          for file in environments/*/dev-app.yaml environments/*/prod-app.yaml; do
-            if [ -f "$file" ]; then
-              echo "Checking $file"
-              grep -q "apiVersion:" "$file" || (echo "ERROR: $file missing apiVersion" && exit 1)
-              grep -q "kind:" "$file" || (echo "ERROR: $file missing kind" && exit 1)
-              grep -q "metadata:" "$file" || (echo "ERROR: $file missing metadata" && exit 1)
-            fi
-          done
+    - name: Check for required Kubernetes fields
+      run: |
+        echo "🧪 Checking for required Kubernetes fields..."
+        for file in environments/*/dev-app.yaml environments/*/prod-app.yaml; do
+          if [ -f "$file" ]; then
+            echo "Checking $file"
+            grep -q "apiVersion:" "$file" || (echo "❌ ERROR: $file missing apiVersion" && exit 1)
+            grep -q "kind:" "$file" || (echo "❌ ERROR: $file missing kind" && exit 1)
+            grep -q "metadata:" "$file" || (echo "❌ ERROR: $file missing metadata" && exit 1)
+          fi
+        done
 
   security-scan:
     name: Security Scan
