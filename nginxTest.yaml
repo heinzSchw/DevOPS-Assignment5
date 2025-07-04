@@ -1,17 +1,17 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nginxTest
-  namespace: gitopsTest
+  name: nginxtest
+  namespace: gitopstest
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: nginxTest
+      app: nginxtest
   template:
     metadata:
       labels:
-        app: nginxTest
+        app: nginxtest
     spec:
       containers:
       - name: nginx
@@ -22,11 +22,11 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: nginxTest
-  namespace: gitopsTest
+  name: nginxtest
+  namespace: gitopstest
 spec:
   selector:
-    app: nginxTest
+    app: nginxtest
   ports:
   - port: 80
     targetPort: 80
@@ -34,4 +34,4 @@ spec:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: gitopsTest
+  name: gitopstest
