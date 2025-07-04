@@ -1,0 +1,68 @@
+name: PR Gate - GitOps Validation
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  kube-linter:
+    name: Kubernetes Linting
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup kube-linter
+      run: |
+        curl -L https://github.com/stackrox/kube-linter/releases/download/v0.6.8/kube-linter-linux.tar.gz | tar xz
+        sudo mv kube-linter /usr/local/bin/
+
+    - name: Run kube-linter
+      run: |
+        cat > .kube-linter.yaml << 'EOF'
+        checks:
+          addAllBuiltIn: true
+          exclude:
+            - "default-service-account"
+            - "dnsconfig-options"
+            - "minimum-three-replicas"
+            - "no-liveness-probe"
+            - "no-node-affinity"
+            - "no-readiness-probe"
+            - "no-rolling-update-strategy"
+            - "non-isolated-pod"
+            - "privileged-ports"
+            - "read-secret-from-env-var"
+            - "required-annotation-email"
+            - "required-label-owner"
+        EOF
+
+        find . -name "*.yaml" -o -name "*.yml" | grep -E "(k8s|environments)" | while read file; do
+          echo "Linting: $file"
+          if grep -q "kind: SealedSecret" "$file"; then
+            echo "Skipping SealedSecret: $file"
+            continue
+          fi
+          kube-linter lint "$file" --config .kube-linter.yaml
+        done
+
+  validate-kustomize:
+    name: Validate Kustomize Build
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install kustomize
+      run: |
+        curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+        sudo mv kustomize /usr/local/bin/
+
+    - name: Validate with kustomize
+      run: |
+        for dir in $(find . -name kustomization.yaml -exec dirname {} \;); do
+          echo "Validating Kustomize directory: $dir"
+          kustomize build "$dir" | kubectl apply --dry-run=client -f -
+        done
