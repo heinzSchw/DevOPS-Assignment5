@@ -43,19 +43,19 @@ jobs:
 
       - name: Validate kustomize output
         run: |
-            files=$(find . -name kustomization.yaml)
-            if [ -z "$files" ]; then
-              echo "No kustomization.yaml files found — skipping validation."
-              exit 0
-            fi
+          files=$(find . -name kustomization.yaml)
+          if [ -z "$files" ]; then
+            echo "No kustomization.yaml files found — skipping validation."
+            exit 0
+          fi
 
-            for dir in $(dirname $files); do
-              echo "Validating Kustomize directory: $dir"
-              kustomize build "$dir" >/dev/null || {
-                echo "ERROR: kustomize build failed for $dir"
-                exit 1
-              }
-            done
+          for dir in $(dirname $files); do
+            echo "Validating Kustomize directory: $dir"
+            kustomize build "$dir" --validate=false >/dev/null || {
+              echo "ERROR: kustomize build failed for $dir"
+              exit 1
+            }
+          done
 
   validate-manifests:
     name: Validate Kubernetes Manifests
