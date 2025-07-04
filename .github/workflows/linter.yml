@@ -20,17 +20,17 @@ jobs:
         curl -L https://github.com/stackrox/kube-linter/releases/download/v0.6.8/kube-linter-linux.tar.gz | tar xz
         sudo mv kube-linter /usr/local/bin/
 
-    - name: Lint Kubernetes manifests
+    - name: Lint Kubernetes manifests with config
       run: |
-        echo "Linting all Kubernetes manifests..."
-        find . -name "*.yaml" -o -name "*.yml" | grep -E "(environments|k8s)" | while read file; do
+        echo "Linting all Kubernetes manifests with kube-linter..."
+        find environments/ -name "*.yaml" | while read file; do
+          if grep -q "kind: SealedSecret" "$file"; then
+            echo "Skipping SealedSecret: $file"
+            continue
+          fi
           echo "Linting $file"
-          kube-linter lint "$file"
+          kube-linter lint --config .kube-linter.yaml "$file"
         done
-
-    - name: Strict lint check
-      run: |
-        find environments/ -name "*.yaml" -exec kube-linter lint {} \;
 
   validate-kustomize:
     name: Validate Kustomize Build

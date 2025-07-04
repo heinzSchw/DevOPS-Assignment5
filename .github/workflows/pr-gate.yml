@@ -18,29 +18,8 @@ jobs:
         curl -L https://github.com/stackrox/kube-linter/releases/download/v0.6.8/kube-linter-linux.tar.gz | tar xz
         sudo mv kube-linter /usr/local/bin/
 
-    - name: Run kube-linter
+    - name: Run kube-linter with config
       run: |
-        cat > .kube-linter.yaml << 'EOF'
-        checks:
-          addAllBuiltIn: true
-          exclude:
-            - no-read-only-root-fs
-            - run-as-non-root
-            - unset-cpu-requirements
-            - unset-memory-requirements
-            - "exposed-services"
-            - "default-service-account"
-            - "dnsconfig-options"
-            - "no-liveness-probe"
-            - "no-readiness-probe"
-            - "no-rolling-update-strategy"
-            - "non-isolated-pod"
-            - "privileged-ports"
-            - "read-secret-from-env-var"
-            - "required-annotation-email"
-            - "required-label-owner"
-        EOF
-
         find . -name "*.yaml" -o -name "*.yml" | grep -E "(k8s|environments)" | while read file; do
           echo "Linting: $file"
           if grep -q "kind: SealedSecret" "$file"; then
