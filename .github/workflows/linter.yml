@@ -24,7 +24,7 @@ jobs:
         run: |
           echo "Linting all Kubernetes manifests with kube-linter..."
           kube-linter lint environments/ --config .kube-linter.yaml || {
-            echo "ERROR: kube-linter found issues"
+            echo "❌ ERROR: kube-linter found issues"
             exit 1
           }
 
@@ -45,16 +45,24 @@ jobs:
         run: |
           files=$(find . -name kustomization.yaml)
           if [ -z "$files" ]; then
-            echo "No kustomization.yaml files found — skipping validation."
+            echo "✅ No kustomization.yaml files found — skipping validation."
             exit 0
           fi
 
           for dir in $(dirname $files); do
             echo "Validating Kustomize directory: $dir"
-            kustomize build "$dir" >/dev/null || {
-              echo "ERROR: kustomize build failed for $dir"
+            output=$(kustomize build "$dir" 2>&1)
+            status=$?
+            if [ $status -ne 0 ]; then
+              echo "❌ ERROR: kustomize build failed for $dir"
+              echo "$output"
               exit 1
-            }
+            fi
+            if [ -z "$output" ]; then
+              echo "⚠️ WARNING: kustomize build returned no resources for $dir"
+              continue
+            fi
+            echo "✅ Kustomize build passed for $dir"
           done
 
   validate-manifests:
