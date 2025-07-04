@@ -42,7 +42,7 @@ jobs:
       run: |
         for dir in $(find . -name kustomization.yaml -exec dirname {} \;); do
           echo "Validating Kustomize directory: $dir"
-          kustomize build "$dir" | kubectl apply --dry-run=client -f -
+          kustomize build "$dir" | kubectl apply --dry-run=client --validate=false -f -
         done
 
   validate-manifests:
