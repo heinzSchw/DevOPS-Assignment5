@@ -48,7 +48,10 @@ jobs:
 
         for dir in $(dirname $files); do
           echo "Validating Kustomize directory: $dir"
-          kustomize build "$dir" | kubectl apply --dry-run=client --validate=false -f -
+          kustomize build "$dir" >/dev/null || {
+            echo "ERROR: kustomize build failed for $dir"
+            exit 1
+          }
         done
 
   validate-manifests:
